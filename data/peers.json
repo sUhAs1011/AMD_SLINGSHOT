@@ -1,0 +1,182 @@
+[
+    {
+        "peer_id": "peer_001",
+        "primary_emotion": "anxiety",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Reports work-related stress, tight deadlines, and sleep disturbances contributing to heightened anxiety.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Work stress and poor sleep hygiene"
+    },
+    {
+        "peer_id": "peer_002",
+        "primary_emotion": "depression",
+        "detected_risk": "high",
+        "self_harm_indicators": false,
+        "clinical_notes": "Persistent sadness, low motivation, and social withdrawal indicative of depressive symptoms.",
+        "risk_score": 4,
+        "root_cause_of_the_distress": "Chronic low mood and social isolation"
+    },
+    {
+        "peer_id": "peer_003",
+        "primary_emotion": "stress",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Experiencing significant academic pressure and fear of exam failure.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Academic workload and performance anxiety"
+    },
+    {
+        "peer_id": "peer_004",
+        "primary_emotion": "burnout",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Emotional exhaustion due to prolonged workload and insufficient recovery.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Chronic overwork and lack of rest"
+    },
+    {
+        "peer_id": "peer_005",
+        "primary_emotion": "loneliness",
+        "detected_risk": "low",
+        "self_harm_indicators": false,
+        "clinical_notes": "Feelings of disconnection and isolation after living alone.",
+        "risk_score": 2,
+        "root_cause_of_the_distress": "Social isolation"
+    },
+    {
+        "peer_id": "peer_006",
+        "primary_emotion": "panic",
+        "detected_risk": "high",
+        "self_harm_indicators": false,
+        "clinical_notes": "Recurrent panic attacks with physiological symptoms such as tachycardia and breathlessness.",
+        "risk_score": 4,
+        "root_cause_of_the_distress": "Panic disorder symptoms"
+    },
+    {
+        "peer_id": "peer_007",
+        "primary_emotion": "self-doubt",
+        "detected_risk": "low",
+        "self_harm_indicators": false,
+        "clinical_notes": "Ongoing self-questioning and fear of negative evaluation.",
+        "risk_score": 2,
+        "root_cause_of_the_distress": "Low confidence and fear of judgment"
+    },
+    {
+        "peer_id": "peer_008",
+        "primary_emotion": "grief",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Grieving the loss of a close family member with low energy and sadness.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Bereavement"
+    },
+    {
+        "peer_id": "peer_009",
+        "primary_emotion": "anger",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Frequent irritability and frustration in professional settings.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Workplace frustration"
+    },
+    {
+        "peer_id": "peer_010",
+        "primary_emotion": "distress",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Ongoing interpersonal conflicts and communication breakdown with partner.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Relationship conflicts"
+    },
+    {
+        "peer_id": "peer_011",
+        "primary_emotion": "anxiety",
+        "detected_risk": "high",
+        "self_harm_indicators": false,
+        "clinical_notes": "Significant worry related to finances, debt, and job security.",
+        "risk_score": 4,
+        "root_cause_of_the_distress": "Financial instability"
+    },
+    {
+        "peer_id": "peer_012",
+        "primary_emotion": "anxiety",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Persistent feelings of inadequacy despite objective success.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Imposter syndrome"
+    },
+    {
+        "peer_id": "peer_013",
+        "primary_emotion": "anxiety",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Marked fear and avoidance of social situations and public speaking.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Social anxiety"
+    },
+    {
+        "peer_id": "peer_014",
+        "primary_emotion": "anxiety",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Excessive concern about physical symptoms and health status.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Health-related anxiety"
+    },
+    {
+        "peer_id": "peer_015",
+        "primary_emotion": "uncertainty",
+        "detected_risk": "low",
+        "self_harm_indicators": false,
+        "clinical_notes": "Confusion and indecision regarding future career path.",
+        "risk_score": 2,
+        "root_cause_of_the_distress": "Career ambiguity"
+    },
+    {
+        "peer_id": "peer_016",
+        "primary_emotion": "burnout",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Mental fatigue due to sustained academic demands.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Academic overload"
+    },
+    {
+        "peer_id": "peer_017",
+        "primary_emotion": "fatigue",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Chronic insomnia and irregular sleep impacting daily functioning.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Sleep dysregulation"
+    },
+    {
+        "peer_id": "peer_018",
+        "primary_emotion": "stress",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "High pressure to maintain consistent performance levels.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Performance expectations"
+    },
+    {
+        "peer_id": "peer_019",
+        "primary_emotion": "sadness",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Negative self-perception and diminished self-worth.",
+        "risk_score": 3,
+        "root_cause_of_the_distress": "Low self-esteem"
+    },
+    {
+        "peer_id": "peer_020",
+        "primary_emotion": "stress",
+        "detected_risk": "low",
+        "self_harm_indicators": false,
+        "clinical_notes": "Difficulty adjusting to a new environment or city.",
+        "risk_score": 2,
+        "root_cause_of_the_distress": "Environmental adjustment challenges"
+    }
+]

@@ -1,0 +1,24 @@
+streamlit==1.32.2
+audio-recorder-streamlit==0.0.10
+requests==2.31.0
+pydub==0.25.1
+python-dotenv==1.0.1
+
+# Microsoft Presidio for PII scrubbing
+presidio-analyzer==2.2.352
+presidio-anonymizer==2.2.352
+
+# NLP requirements for Presidio
+spacy==3.7.4
+en_core_web_lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.1/en_core_web_lg-3.7.1-py3-none-any.whl
+
+# LangChain and AI Agents
+langchain
+langchain-community
+langchain-core
+langchain-postgres
+
+# Vector DB and Embeddings
+pinecone-client==3.2.2
+sentence-transformers==2.6.1
+psycopg[binary]==3.1.18
