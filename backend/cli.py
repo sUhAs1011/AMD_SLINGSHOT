@@ -4,8 +4,7 @@ import os
 import concurrent.futures
 from langchain_core.messages import HumanMessage, AIMessage
 
-from utils.data_processing import evaluate_threshold
-from utils.vector_search import find_matching_peer_group
+
 from agents.listener import ListenerAgent
 from agents.mapper import ClinicalMapperAgent
 from utils.matchmaker import PeerMatchmaker
@@ -60,7 +59,16 @@ def run_cli():
 
                 profile = future_mapper.result()
 
-            action = evaluate_threshold(profile, session_id)
+            risk_level = profile.get("detected_risk", "low").lower()
+            self_harm = profile.get("self_harm_indicators", False)
+            risk_score = profile.get("risk_score", 1)
+            
+            if self_harm is True or risk_score >= 9:
+                action = "escalate_to_tele_manas"
+            elif risk_level == "high" or risk_score >= 7:
+                action = "route_to_peer_group"
+            else:
+                action = "continue_listening"
             
             # Print insight for debugging/demo
             root_cause = profile.get("root_cause_of_the_distress", "-")
@@ -68,13 +76,6 @@ def run_cli():
                 print(f"[INSIGHT]: Detected potential cause: {root_cause}")
             
             peer_group = None
-            if profile.get("clinical_notes") and profile["clinical_notes"] != "Failed to parse clinical profile.":
-                peer_group = find_matching_peer_group(profile["clinical_notes"])
-
-            if action == "route_to_peer_group" and peer_group:
-                group_msg = f"\n[SYSTEM ALERT]: Just so you know, I found {peer_group} that matches what you are feeling if you ever want to connect with others who understand."
-                print(group_msg)
-                full_listener_response += group_msg
 
             log_entry = {
                 "user_input": user_input,

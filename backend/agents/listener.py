@@ -12,7 +12,8 @@ class ListenerAgent:
             num_ctx=2048,
             num_thread=8,
             num_predict=300,
-            repeat_penalty=1.2
+            repeat_penalty=1.2,
+            stop=["\n\n", "User:", "You:", "Name: Response"]
         )
         self.system_prompt = SystemMessage(
             content=(

@@ -3,7 +3,7 @@ import json
 import re
 from langchain_community.chat_models import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage
-from utils.vector_search import search_trauma_patterns
+
 
 class ClinicalMapperAgent:
     def __init__(self):
@@ -19,12 +19,8 @@ class ClinicalMapperAgent:
         )
 
     def analyze(self, user_message: str) -> dict:
-        dataset_context = search_trauma_patterns(user_message)
-        
         system_prompt_template = f"""You are an expert Clinical Psychologist AI mapping a user's trauma.
-        Analyze the exact keywords and implied distress in the user's message against the retrieved database patterns.
-        
-        {dataset_context}
+        Analyze the exact keywords and implied distress in the user's message.
         
         1. primary_emotion: e.g., severe anxiety, suicidal ideation, depression, fear.
         2. detected_risk: "low" (1-4), "moderate" (5-7), or "high" (8-10).
