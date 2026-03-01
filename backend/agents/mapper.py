@@ -19,17 +19,18 @@ class ClinicalMapperAgent:
         )
 
     def analyze(self, user_message: str) -> dict:
-        system_prompt_template = f"""You are an expert Clinical Psychologist AI mapping a user's trauma.
-        Analyze the exact keywords and implied distress in the user's message.
+        system_prompt_template = """You are an expert Clinical Psychologist AI mapping a user's trauma.
+        Read the provided conversation transcript and analyze the user's current psychological state.
         
-        1. clinical_summary: Summarize the user's situation in 2-3 sentences. Explicitly but minimallly justify the chosen primary_emotion, risk_level, risk_score, self_harm status, and root_cause.
+        CRITICAL RULES:
+        1. clinical_summary: Summarize the user's situation in 2-3 sentences. Justify the chosen emotion, risk level, and root cause.
         2. primary_emotion: e.g., severe anxiety, suicidal ideation, depression, fear.
         3. detected_risk: "low" (1-4), "moderate" (5-7), or "high" (8-10).
-        4. self_harm_indicators: true ONLY if explicit/implied intent matches high-risk database patterns.
+        4. self_harm_indicators: boolean (true/false).
         5. risk_score: Integer 1-10.
-        6. root_cause_of_the_distress: Identify the specific, external life-event or legitimate incident that is the root cause of the distress. Examples include: 'Bereavement/Loss', 'Job loss/Layoffs', 'Academic failure/Exam stress', 'Physical assault', 'War/Conflict', 'Breakup/Divorce'. CRITICAL: If the user only describes feelings (lonely, sad, anxious) without naming a specific external event, YOU MUST RETURN '-'.
+        6. root_cause_of_the_distress: Identify the specific, external life-event that caused this distress (e.g. 'Job loss', 'Bereavement', 'Breakup'). If the user only describes feelings without naming a specific event, return '-'.
         
-        Output ONLY valid JSON.
+        Output ONLY valid JSON matching this exact structure:
         {{
             "clinical_summary": "string",
             "primary_emotion": "string",

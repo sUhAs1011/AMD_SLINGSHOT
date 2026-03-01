@@ -151,8 +151,8 @@ def run_cli():
             raw_history.append({"role": "assistant", "content": full_listener_response})
 
             # Check for peer match based on locked root cause and risk score
-            # We require at least 4 items in raw_history (2 full turns: user-assistant-user-assistant)
-            if session_root_cause != "-" and current_risk_score >= 5 and len(raw_history) >= 4:
+            # We require at least 8 items in raw_history (4 full turns: user-assistant-user-assistant...)
+            if session_root_cause != "-" and current_risk_score >= 5 and len(raw_history) >= 8:
                 match = matchmaker.find_match(session_root_cause)
                 if match:
                     print(f"\n[PEER MATCH]: I've found someone who has gone through something similar. They are available to talk.")
