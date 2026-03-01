@@ -178,5 +178,14 @@
         "clinical_notes": "Difficulty adjusting to a new environment or city.",
         "risk_score": 2,
         "root_cause_of_the_distress": "Environmental adjustment challenges"
+    },
+    {
+        "peer_id": "peer_021",
+        "primary_emotion": "depression",
+        "detected_risk": "moderate",
+        "self_harm_indicators": false,
+        "clinical_notes": "Struggling with repeated job rejections after sudden job loss, leading to feelings of inadequacy, worthlessness, and severe financial anxiety.",
+        "risk_score": 6,
+        "root_cause_of_the_distress": "Job loss/Layoffs"
     }
 ]
