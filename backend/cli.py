@@ -10,23 +10,40 @@ from agents.mapper import ClinicalMapperAgent
 from utils.matchmaker import PeerMatchmaker
 
 def run_cli():
-    listener_agent = ListenerAgent()
-    mapper_agent = ClinicalMapperAgent()
-    matchmaker = PeerMatchmaker()
-    
     session_id = str(uuid.uuid4())
     raw_history = []
+    log_dir = "session_logs"
+    os.makedirs(log_dir, exist_ok=True)
     
-    os.makedirs("session_logs", exist_ok=True)
-    log_file = f"session_logs/{session_id}.json"
+    # Generate sequential log filename
+    existing_logs = [f for f in os.listdir(log_dir) if f.startswith("session_log") and f.endswith(".json")]
+    next_index = len(existing_logs) + 1
+    log_file = os.path.join(log_dir, f"session_log{next_index}.json")
     
     with open(log_file, "w") as f:
         json.dump([], f)
         
-    print("Initializing Kalpana 6.0 CLI with GPU Acceleration & Vector Search...")
-    print(f"\nSession started [ID: {session_id}]")
-    print("Type 'quit' or 'exit' to end the session.\n")
     print("=" * 60)
+    print("KALPANA 6.0 - EMOTIONAL SUPPORT CLI")
+    print("=" * 60)
+    print(f"\n[SYSTEM]: Initializing components... (this may take a moment)")
+    
+    print(" - Loading Listener Agent...", end="", flush=True)
+    listener_agent = ListenerAgent()
+    print(" Ready.")
+    
+    print(" - Loading Mapper Agent...", end="", flush=True)
+    mapper_agent = ClinicalMapperAgent()
+    print(" Ready.")
+    
+    print(" - Connecting to Vector Database...", end="", flush=True)
+    matchmaker = PeerMatchmaker()
+    print(" Ready.")
+    
+    print(f"\n[SUCCESS]: Session started [ID: {session_id}]")
+    print("Type 'quit' or 'exit' to end the session.\n")
+    print("-" * 60)
+    session_root_cause = "-" # State-locking variable
     
     while True:
         try:
@@ -70,10 +87,14 @@ def run_cli():
             else:
                 action = "continue_listening"
             
-            # Print insight for debugging/demo
-            root_cause = profile.get("root_cause_of_the_distress", "-")
-            if root_cause != "-":
-                print(f"[INSIGHT]: Detected potential cause: {root_cause}")
+            # State-Locking Logic
+            detected_cause = profile.get("root_cause_of_the_distress", "-")
+            if session_root_cause == "-" and detected_cause != "-":
+                session_root_cause = detected_cause
+                print(f"[INSIGHT]: Discovered root cause: {session_root_cause}")
+            elif session_root_cause != "-":
+                # Restore locked state in profile for logging
+                profile["root_cause_of_the_distress"] = session_root_cause
             
             peer_group = None
 
@@ -96,9 +117,10 @@ def run_cli():
             raw_history.append({"role": "user", "content": user_input})
             raw_history.append({"role": "assistant", "content": full_listener_response})
 
-            # Check for peer match based on root cause and dynamic readiness
-            if root_cause != "-" and profile.get("ready_for_matchmaking", False):
-                match = matchmaker.find_match(root_cause)
+            # Check for peer match based on locked root cause and risk score
+            # We require at least 4 items in raw_history (2 full turns: user-assistant-user-assistant)
+            if session_root_cause != "-" and risk_score >= 7 and len(raw_history) >= 4:
+                match = matchmaker.find_match(session_root_cause)
                 if match:
                     print(f"\n[PEER MATCH]: I've found someone who has gone through something similar. They are available to talk.")
                     print(f"Type 'connect' if you'd like to reach out to them.")
@@ -115,7 +137,7 @@ def run_cli():
                 if next_action == 'connect':
                     print("\n" + "="*40)
                     print(f"CONNECTING YOU TO PEER: {current_match.get('primary_emotion', 'Friend')}")
-                    print(f"Context: {current_match.get('clinical_notes', 'N/A')}")
+                    print(f"Context: {current_match.get('clinical_notes', 'N/A')}") # Note: peers.json still uses clinical_notes
                     print("="*40)
                     print("\n[SYSTEM]: Connection request sent. They will be notified.")
                     current_match = None # Reset after connecting

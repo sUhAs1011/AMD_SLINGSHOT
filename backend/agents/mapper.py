@@ -8,9 +8,9 @@ from langchain_core.messages import SystemMessage, HumanMessage
 class ClinicalMapperAgent:
     def __init__(self):
         self.llm = ChatOllama(
-            model="hf.co/QuantFactory/Mental-Health-FineTuned-Mistral-7B-Instruct-v0.2-GGUF:Q4_K_M", 
+            model="gemma3:4b", 
             temperature=0.0,
-            num_gpu=0,  
+            num_gpu=-1,  
             keep_alive=-1,
             num_ctx=2048,
             num_thread=8,
@@ -22,23 +22,21 @@ class ClinicalMapperAgent:
         system_prompt_template = f"""You are an expert Clinical Psychologist AI mapping a user's trauma.
         Analyze the exact keywords and implied distress in the user's message.
         
-        1. primary_emotion: e.g., severe anxiety, suicidal ideation, depression, fear.
-        2. detected_risk: "low" (1-4), "moderate" (5-7), or "high" (8-10).
-        3. self_harm_indicators: true ONLY if explicit/implied intent matches high-risk database patterns.
-        4. clinical_notes: Concise mapping of the user's trauma category based on vector similarity.
+        1. clinical_summary: Summarize the user's situation in 2-3 sentences. Explicitly but minimallly justify the chosen primary_emotion, risk_level, risk_score, self_harm status, and root_cause.
+        2. primary_emotion: e.g., severe anxiety, suicidal ideation, depression, fear.
+        3. detected_risk: "low" (1-4), "moderate" (5-7), or "high" (8-10).
+        4. self_harm_indicators: true ONLY if explicit/implied intent matches high-risk database patterns.
         5. risk_score: Integer 1-10.
-        6. root_cause_of_the_distress: Identify the specific, external life-event or legitimate incident that is the root cause of the distress. Examples include: 'Bereavement/Loss', 'Job loss/Layoffs', 'Academic failure/Exam stress', 'Physical assault', 'War/Conflict', 'Breakup/Divorce'. CRITICAL: Do NOT identify generic emotional states (e.g., 'Loneliness', 'Isolation', 'Sadness', 'Anxiety') as the root cause. If the user only describes their feelings without mentioning a specific triggering event, use "-".
-        7. ready_for_matchmaking: Boolean. Set to true ONLY if the user has shared enough specific context about their situation and sounds psychologically ready to connect with a peer. If the conversation is still in early stages or the user seems too overwhelmed/unstable for a peer connection, set to false.
+        6. root_cause_of_the_distress: Identify the specific, external life-event or legitimate incident that is the root cause of the distress. Examples include: 'Bereavement/Loss', 'Job loss/Layoffs', 'Academic failure/Exam stress', 'Physical assault', 'War/Conflict', 'Breakup/Divorce'. CRITICAL: If the user only describes feelings (lonely, sad, anxious) without naming a specific external event, YOU MUST RETURN '-'.
         
         Output ONLY valid JSON.
         {{
+            "clinical_summary": "string",
             "primary_emotion": "string",
             "detected_risk": "low/moderate/high",
             "self_harm_indicators": false,
-            "clinical_notes": "string",
             "risk_score": 1,
-            "root_cause_of_the_distress": "string",
-            "ready_for_matchmaking": false
+            "root_cause_of_the_distress": "string"
         }}"""
 
         messages = [
@@ -54,11 +52,10 @@ class ClinicalMapperAgent:
             return json.loads(raw_text)
         except Exception:
             return {
+                "clinical_summary": "Parsing failed or format error.",
                 "primary_emotion": "unknown",
                 "detected_risk": "low", 
                 "self_harm_indicators": False, 
-                "clinical_notes": "Failed to parse clinical profile.",
                 "risk_score": 1,
-                "root_cause_of_the_distress": "-",
-                "ready_for_matchmaking": False
+                "root_cause_of_the_distress": "-"
             }

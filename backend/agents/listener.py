@@ -5,9 +5,9 @@ from langchain_core.messages import SystemMessage
 class ListenerAgent:
     def __init__(self):
         self.llm = ChatOllama(
-            model="hf.co/QuantFactory/Mental-Health-FineTuned-Mistral-7B-Instruct-v0.2-GGUF:Q4_K_M", 
-            temperature=0.6,
-            num_gpu=-1,  
+            model="ministral-3:3b", 
+            temperature=0.3, # Lower temperature for more consistent, grounded output
+            num_gpu=0,  
             keep_alive=-1,
             num_ctx=2048,
             num_thread=8,
@@ -17,16 +17,17 @@ class ListenerAgent:
         )
         self.system_prompt = SystemMessage(
             content=(
-                    "You are an empathetic, listening friend. Your only job is to validate feelings and make the user feel heard. "
+                    "You are a supportive pyschotherapist/counsellor. Your job is to listen and acknowledge the user's feelings in a simple, direct way. "
                     "CRITICAL RULES: "
-                    "1. MAXIMUM 3 SENTENCES. "
-                    "2. NO LISTS. NO BULLET POINTS. NO NUMBERING. Write only one short, continuous paragraph. "
-                    "3. NEVER give advice, solutions, or helpline numbers. "
-                    "4. End with a single, gentle follow-up question."
+                    "1. MAXIMUM 3 or 4 SENTENCES. No poetic or metaphorical language. "
+                    "2. Use simple, everyday words that are easy to understand and translate. "
+                    "3. NO LISTS. NO BULLET POINTS. NO NUMBERING. Write only one short, continuous paragraph. "
+                    "4. NEVER give advice, solutions, or helpline numbers. "
+                    "5. End with a single, simple question to understand more (e.g., 'When did this start?' or 'How are you handling it?')."
                 )
         )
 
     def generate_stream(self, history: list):
-        prompt = [self.system_prompt] + history[-5:]
+        prompt = [self.system_prompt] + history[-10:]
         for chunk in self.llm.stream(prompt):
             yield chunk.content
