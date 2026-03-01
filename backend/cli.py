@@ -44,6 +44,8 @@ def run_cli():
     print("Type 'quit' or 'exit' to end the session.\n")
     print("-" * 60)
     session_root_cause = "-" # State-locking variable
+    current_phase = "explore"   # Safe default for Turn 1
+    context_summary = ""        # No clinical context yet
     
     while True:
         try:
@@ -69,7 +71,7 @@ def run_cli():
                 print(f"\nKalpana: ", end="", flush=True)
                 full_listener_response = ""
                 
-                for chunk in listener_agent.generate_stream(langchain_history):
+                for chunk in listener_agent.generate_stream(langchain_history, current_phase, context_summary):
                     print(chunk, end="", flush=True)
                     full_listener_response += chunk
                 print("\n")
@@ -96,11 +98,25 @@ def run_cli():
                 # Restore locked state in profile for logging
                 profile["root_cause_of_the_distress"] = session_root_cause
             
+            # --- Phase Derivation (Priority Candidates Pattern) ---
+            context_summary = profile.get("clinical_summary", "")
+            candidates = []
+            if profile.get("self_harm_indicators", False):
+                candidates.append((0, "crisis"))
+            if session_root_cause != "-":
+                candidates.append((1, "process"))
+            if profile.get("risk_score", 1) >= 5:
+                candidates.append((2, "probe"))
+            candidates.append((3, "explore"))
+            current_phase = min(candidates, key=lambda x: x[0])[1]
+            
             peer_group = None
 
             log_entry = {
                 "user_input": user_input,
                 "assistant_response": full_listener_response,
+                "listener_phase": current_phase,
+                "listener_context": context_summary,
                 "action": action,
                 "peer_group_match": peer_group,
                 "clinical_profile": profile
