@@ -21,6 +21,7 @@ class ListenerAgent:
             "Maximum 4 sentences. No lists, no bullet points. Never give advice or helpline numbers."
         )
         self.phase_instructions = {
+            "greeting": "The user is just saying hi. Respond warmly and simply. Ask how they are doing or what brings them here today. Do not assume they are in distress yet.",
             "explore": "Validate their feelings warmly. Ask one soft question about what has been happening in their life — not about feelings.",
             "probe":   "Gently ask if a specific event might have brought these feelings on. One soft question only. Do not push.",
             "process": "The root cause has been identified. Acknowledge their situation with care. Help them feel understood.",

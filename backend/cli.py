@@ -127,6 +127,19 @@ def run_cli():
             current_phase = min(candidates, key=lambda x: x[0])[1]
             
             peer_group = None
+            # Check for peer match based on locked root cause and risk score
+            # We require at least 4 items in raw_history (including the 2 being added this turn)
+            if session_root_cause != "-" and current_risk_score >= 5 and (len(raw_history) + 2) >= 4:
+                match = matchmaker.find_match(session_root_cause)
+                if match:
+                    print(f"\n[PEER MATCH]: I've found someone who has gone through something similar. They are available to talk.")
+                    print(f"Type 'connect' if you'd like to reach out to them.")
+                    current_match = match
+                    peer_group = current_match  # Pass to logger
+                else:
+                    current_match = None
+            else:
+                current_match = None
 
             log_entry = {
                 "user_input": user_input,
@@ -148,20 +161,6 @@ def run_cli():
 
             raw_history.append({"role": "user", "content": user_input})
             raw_history.append({"role": "assistant", "content": full_listener_response})
-
-            # Check for peer match based on locked root cause and risk score
-            # We require at least 8 items in raw_history (4 full turns: user-assistant-user-assistant...)
-            if session_root_cause != "-" and current_risk_score >= 5 and len(raw_history) >= 8:
-                match = matchmaker.find_match(session_root_cause)
-                if match:
-                    print(f"\n[PEER MATCH]: I've found someone who has gone through something similar. They are available to talk.")
-                    print(f"Type 'connect' if you'd like to reach out to them.")
-                    # Store match in a temporary place for the 'connect' command
-                    current_match = match
-                else:
-                    current_match = None
-            else:
-                current_match = None
 
             # Inner loop for 'connect' or next user input
             while current_match:
