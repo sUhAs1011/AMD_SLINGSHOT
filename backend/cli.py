@@ -78,13 +78,15 @@ def run_cli():
 
                 profile = future_mapper.result()
 
+            # If the mapper fails completely, don't overwrite previous critical decisions
+            current_risk_score = profile.get("risk_score", 1)
             risk_level = profile.get("detected_risk", "low").lower()
             self_harm = profile.get("self_harm_indicators", False)
-            risk_score = profile.get("risk_score", 1)
             
-            if self_harm is True or risk_score >= 9:
+            # Action logic
+            if self_harm is True or current_risk_score >= 9:
                 action = "escalate_to_tele_manas"
-            elif risk_level == "high" or risk_score >= 7:
+            elif risk_level == "high" or current_risk_score >= 5:
                 action = "route_to_peer_group"
             else:
                 action = "continue_listening"
@@ -94,9 +96,14 @@ def run_cli():
             if session_root_cause == "-" and detected_cause != "-":
                 session_root_cause = detected_cause
                 print(f"[INSIGHT]: Discovered root cause: {session_root_cause}")
+                # We store the risk_score that triggered this lock so it persists even if mapper fails later
+                session_risk_score = current_risk_score
             elif session_root_cause != "-":
                 # Restore locked state in profile for logging
                 profile["root_cause_of_the_distress"] = session_root_cause
+                # If the mapper failed to produce a score this turn, fall back to the score that locked the cause
+                if current_risk_score == 1 and 'session_risk_score' in locals():
+                    current_risk_score = session_risk_score
             
             # --- Phase Derivation (Priority Candidates Pattern) ---
             context_summary = profile.get("clinical_summary", "")
@@ -135,7 +142,7 @@ def run_cli():
 
             # Check for peer match based on locked root cause and risk score
             # We require at least 4 items in raw_history (2 full turns: user-assistant-user-assistant)
-            if session_root_cause != "-" and risk_score >= 7 and len(raw_history) >= 4:
+            if session_root_cause != "-" and current_risk_score >= 5 and len(raw_history) >= 4:
                 match = matchmaker.find_match(session_root_cause)
                 if match:
                     print(f"\n[PEER MATCH]: I've found someone who has gone through something similar. They are available to talk.")

@@ -12,7 +12,7 @@ class ClinicalMapperAgent:
             temperature=0.0,
             num_gpu=-1,  
             keep_alive=-1,
-            num_ctx=2048,
+            num_ctx=8192,
             num_thread=8,
             num_predict=200,
             format="json"

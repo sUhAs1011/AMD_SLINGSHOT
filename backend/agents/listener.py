@@ -9,7 +9,7 @@ class ListenerAgent:
             temperature=0.3, # Lower temperature for more consistent, grounded output
             num_gpu=0,  
             keep_alive=-1,
-            num_ctx=2048,
+            num_ctx=8192,
             num_thread=8,
             num_predict=300,
             repeat_penalty=1.2,
