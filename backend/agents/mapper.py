@@ -12,7 +12,7 @@ class ClinicalMapperAgent:
             temperature=0.0,
             num_gpu=-1,  
             keep_alive=-1,
-            num_ctx=8192,
+            num_ctx=4096,
             num_thread=8,
             num_predict=200,
             format="json"
@@ -46,6 +46,7 @@ class ClinicalMapperAgent:
         try:
             analysis = self.llm.invoke(messages)
             raw_text = analysis.content.strip()
+            print(f"[DEBUG RAW MAPPER OUTPUT]: '{raw_text}'")
             match = re.search(r'\{.*\}', raw_text, re.DOTALL)
             if match:
                 return json.loads(match.group(0))

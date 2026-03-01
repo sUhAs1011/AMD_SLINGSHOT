@@ -77,7 +77,7 @@ def run_cli():
                 print("\n")
 
                 profile = future_mapper.result()
-
+                print(f"[DEBUG MAPPER]: {profile}")
             # If the mapper fails completely, don't overwrite previous critical decisions
             current_risk_score = profile.get("risk_score", 1)
             risk_level = profile.get("detected_risk", "low").lower()
