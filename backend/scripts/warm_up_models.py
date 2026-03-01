@@ -2,8 +2,8 @@ import requests
 import json
 
 MODELS = {
-    "ministral-3:3b": {"num_gpu":0, "num_ctx": 8192},   # Use CPU for the conversational friend
-    "gemma3:4b": {"num_gpu": -1, "num_ctx": 8192}       # Use GPU for the clinical mapper
+    "ministral-3:3b": {"num_gpu":0, "num_ctx": 4096},   # Use CPU for the conversational friend
+    "gemma3:4b": {"num_gpu": -1, "num_ctx": 4096}       # Use GPU for the clinical mapper
 }
 
 def warm_up():  

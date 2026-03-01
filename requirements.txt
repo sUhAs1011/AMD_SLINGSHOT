@@ -22,3 +22,8 @@ langchain-postgres
 pinecone-client==3.2.2
 sentence-transformers==2.6.1
 psycopg[binary]==3.1.18
+
+# Web Integration
+fastapi
+uvicorn
+pydantic
