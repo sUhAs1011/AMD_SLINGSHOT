@@ -65,8 +65,17 @@ def run_cli():
             
             langchain_history.append(HumanMessage(content=user_input))
 
+            # Compile last 4 messages + current input into a transcript for the Mapper
+            transcript_lines = []
+            for msg in raw_history[-4:]:
+                speaker = "User" if msg["role"] == "user" else "Kalpana"
+                transcript_lines.append(f"{speaker}: {msg['content']}")
+            transcript_lines.append(f"User: {user_input}")
+            full_context_str = "\n".join(transcript_lines)
+
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future_mapper = executor.submit(mapper_agent.analyze, user_input)
+                # Give Mapper full context string instead of just the latest sentence
+                future_mapper = executor.submit(mapper_agent.analyze, full_context_str)
                 
                 print(f"\nKalpana: ", end="", flush=True)
                 full_listener_response = ""

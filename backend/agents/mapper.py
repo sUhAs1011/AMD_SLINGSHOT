@@ -49,8 +49,16 @@ class ClinicalMapperAgent:
             print(f"[DEBUG RAW MAPPER OUTPUT]: '{raw_text}'")
             match = re.search(r'\{.*\}', raw_text, re.DOTALL)
             if match:
-                return json.loads(match.group(0))
-            return json.loads(raw_text)
+                parsed = json.loads(match.group(0))
+                # Defend against empty {} or missing critical fields
+                if not parsed.get("clinical_summary"):
+                    raise ValueError("Empty or incomplete JSON received")
+                return parsed
+                
+            parsed_raw = json.loads(raw_text)
+            if not parsed_raw.get("clinical_summary"):
+                raise ValueError("Empty or incomplete JSON received")
+            return parsed_raw
         except Exception:
             return {
                 "clinical_summary": "Parsing failed or format error.",
