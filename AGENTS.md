@@ -51,7 +51,8 @@ The central application state determines what happens next using the Mapper's JS
 
 ## 3. Technology Stack
 
-- **Frontend / State Management:** Python Streamlit (`app0.py`, `app1.py`)
+- **Frontend / State Management:** React 18, Vite, Tailwind CSS v4 (`/kalpana-frontend`). UI redesign is currently replacing the Streamlit MVP.
+- **Backend API:** Currently relying on Python Streamlit (`app0.py`) controllers. A dedicated FastAPI backend server is planned to replace it.
 - **Concurrency:** `concurrent.futures.ThreadPoolExecutor`
 - **Orchestration:** LangChain (`langchain_community.chat_models.ChatOllama`)
 - **Local LLM Engine:** Ollama API 
@@ -64,7 +65,8 @@ The central application state determines what happens next using the Mapper's JS
 
 ## 4. Repository Structure Highlights
 
-*   `app0.py`: The Main MVP Text-based Streamlit UI. Manages streaming chat, concurrent threading, complex state mapping, and log dumping. **Start Here for UI.**
+*   `kalpana-frontend`: The primary UI codebase built on React, Vite, and Tailwind v4. Features a strict "WEAL" color palette (Magenta/Deep Purple), a fully mocked WhatsApp-style Audio Recording component (`ChatInput.jsx`), Custom HTML5 Audio Players. (Note: Currently relies on mock requests until the FastAPI backend is ready).
+*   `app0.py`: The Main MVP Text-based Streamlit UI and routing controller. Manages streaming chat, concurrent threading, complex state mapping, and log dumping. **Start Here for backend routing.**
 *   `app1.py`: Voice/STT variant of the app (Legacy/Alt version). Includes Sarvam Voice API integrations.
 *   `backend/cli.py`: The core business logic testbed. Everything in `app0.py` was modeled directly off this CLI runner. Use this for testing deterministic routing without UI overhead.
 *   `backend/agents/listener.py`: Contains the `ministral-3:3b` prompt configurations and the Phase Definitions.
