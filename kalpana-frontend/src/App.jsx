@@ -3,6 +3,7 @@ import FluidBackground from './components/FluidBackground';
 import MessageBubble from './components/MessageBubble';
 import ChatInput from './components/ChatInput';
 import PeerMatchModal from './components/PeerMatchModal';
+import CrisisModal from './components/CrisisModal';
 
 // Generate a simple unique session ID
 function generateSessionId() {
@@ -18,6 +19,7 @@ function App() {
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const [peerMatch, setPeerMatch] = useState(null);
+  const [isCrisisMode, setIsCrisisMode] = useState(false);
   const scrollRef = useRef(null);
   const sessionIdRef = useRef(generateSessionId());
 
@@ -29,6 +31,7 @@ function App() {
   }, [messages, isTyping]);
 
   const handleSendMessage = async (text, audioUrl = null) => {
+    if (isCrisisMode) return;
     if (!text.trim() && !audioUrl) return;
 
     // Add user message to UI immediately
@@ -90,8 +93,11 @@ function App() {
                 return updated;
               });
             } else if (payload.type === 'metadata') {
-              // Handle peer match notification
-              if (payload.peer_group_match) {
+              // Crisis mode has hard priority over peer-match UI.
+              if (payload.crisis_intercept === true) {
+                setIsCrisisMode(true);
+                setPeerMatch(null);
+              } else if (payload.peer_group_match) {
                 setPeerMatch(payload.peer_group_match);
               }
             }
@@ -150,11 +156,14 @@ function App() {
         </div>
 
         {/* Input Area */}
-        <ChatInput onSendMessage={handleSendMessage} isTyping={isTyping} />
+        <ChatInput onSendMessage={handleSendMessage} isTyping={isTyping} isInputLocked={isCrisisMode} />
       </div>
 
       {/* Modal View */}
-      <PeerMatchModal peerMatch={peerMatch} sessionId={sessionIdRef.current} onClose={() => setPeerMatch(null)} />
+      {!isCrisisMode && (
+        <PeerMatchModal peerMatch={peerMatch} sessionId={sessionIdRef.current} onClose={() => setPeerMatch(null)} />
+      )}
+      <CrisisModal isOpen={isCrisisMode} onAcknowledgeSafe={() => setIsCrisisMode(false)} />
     </div>
   );
 }

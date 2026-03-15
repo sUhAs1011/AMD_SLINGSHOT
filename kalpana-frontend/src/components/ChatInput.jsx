@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Send, Mic, Trash2 } from 'lucide-react';
 
-const ChatInput = ({ onSendMessage, isTyping }) => {
+const ChatInput = ({ onSendMessage, isTyping, isInputLocked = false }) => {
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -15,14 +15,14 @@ const ChatInput = ({ onSendMessage, isTyping }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!input.trim() || isTyping) return;
+    if (!input.trim() || isTyping || isInputLocked) return;
     
     onSendMessage(input.trim());
     setInput('');
   };
 
   const startRecording = async () => {
-    if (isTyping || isRecording || isInitializingRef.current) return;
+    if (isTyping || isInputLocked || isRecording || isInitializingRef.current) return;
     isInitializingRef.current = true;
     
     try {
@@ -141,8 +141,12 @@ const ChatInput = ({ onSendMessage, isTyping }) => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              disabled={isTyping}
-              placeholder={isTyping ? "Kalpana is typing..." : "Type your message here..."}
+              disabled={isTyping || isInputLocked}
+              placeholder={
+                isInputLocked
+                  ? "Safety mode active. Please use the on-screen options."
+                  : (isTyping ? "Kalpana is typing..." : "Type your message here...")
+              }
               className="w-full h-full bg-kalpana-800/40 text-kalpana-100 placeholder-kalpana-300/50 
                          border border-kalpana-300/20 rounded-full py-0 pl-6 pr-14 
                          focus:outline-none focus:ring-2 focus:ring-kalpana-500/50 transition-all duration-300"
@@ -152,7 +156,7 @@ const ChatInput = ({ onSendMessage, isTyping }) => {
             {input.trim() ? (
               <button
                 type="submit"
-                disabled={isTyping}
+                disabled={isTyping || isInputLocked}
                 className="absolute right-2 p-2.5 rounded-full bg-kalpana-500 text-white
                            hover:bg-[#E6007A] disabled:opacity-50 disabled:cursor-not-allowed
                            shadow-[0_0_15px_rgba(216,27,96,0.3)] hover:shadow-[0_0_20px_rgba(216,27,96,0.6)]
@@ -164,7 +168,7 @@ const ChatInput = ({ onSendMessage, isTyping }) => {
               <button
                 type="button"
                 onClick={startRecording}
-                disabled={isTyping}
+                disabled={isTyping || isInputLocked}
                 className="absolute right-2 p-2.5 rounded-full bg-kalpana-800 text-kalpana-300 border border-kalpana-300/20
                            hover:text-kalpana-500 hover:border-kalpana-500/50 hover:bg-kalpana-800 disabled:opacity-50 disabled:cursor-not-allowed
                            transition-all duration-300 animate-in zoom-in"

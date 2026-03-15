@@ -22,6 +22,7 @@ ACTIVE_SESSIONS: dict = {}
 listener_agent = None
 mapper_agent = None
 matchmaker = None
+CRISIS_RISK_THRESHOLD = 8
 
 # ---------------------------------------------------------------------------
 # Lifespan – Load heavy models once at startup
@@ -139,6 +140,7 @@ async def chat(req: ChatRequest):
         # --- State Management (mirrors app0.py / cli.py logic) ---
         current_risk_score = profile.get("risk_score", 1)
         self_harm = profile.get("self_harm_indicators", False)
+        crisis_intercept = bool(self_harm or current_risk_score >= CRISIS_RISK_THRESHOLD)
 
         # Root cause state-locking
         extracted_root_cause = profile.get("root_cause_of_the_distress", "-")
@@ -150,7 +152,7 @@ async def chat(req: ChatRequest):
         session["session_risk_score"] = max(session["session_risk_score"], current_risk_score)
 
         # Action determination
-        if self_harm:
+        if crisis_intercept:
             action = "escalate_to_human"
         elif session["session_root_cause"] != "-" and session["session_risk_score"] >= 5:
             action = "route_to_peer_group"
@@ -166,7 +168,7 @@ async def chat(req: ChatRequest):
 
         # Phase derivation (priority candidates pattern)
         candidates = []
-        if self_harm:
+        if crisis_intercept:
             candidates.append((0, "crisis"))
         if session["session_root_cause"] != "-":
             candidates.append((1, "process"))
@@ -180,7 +182,7 @@ async def chat(req: ChatRequest):
         # Peer Matchmaker
         peer_match = None
         history_len = len(req.chat_history)
-        if session["session_root_cause"] != "-" and current_risk_score >= 5 and history_len >= 4:
+        if (not crisis_intercept) and session["session_root_cause"] != "-" and current_risk_score >= 5 and history_len >= 4:
             match = matchmaker.find_match(session["session_root_cause"])
             if match:
                 peer_match = match
@@ -213,6 +215,7 @@ async def chat(req: ChatRequest):
             "listener_phase": used_phase,
             "listener_context": used_context,
             "action": action,
+            "crisis_intercept": crisis_intercept,
             "peer_group_match": peer_match,
             "clinical_profile": profile,
         }
@@ -225,8 +228,8 @@ async def chat(req: ChatRequest):
         except Exception as e:
             print(f"[LOG ERROR]: {e}")
 
-        # Send the final metadata event (peer match info)
-        yield f"data: {json.dumps({'type': 'metadata', 'peer_group_match': peer_match})}\n\n"
+        # Send the final metadata event (peer match info + crisis routing flag)
+        yield f"data: {json.dumps({'type': 'metadata', 'peer_group_match': peer_match, 'crisis_intercept': crisis_intercept})}\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
