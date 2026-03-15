@@ -2,10 +2,11 @@
 import json
 import os
 import datetime
+import base64
 import concurrent.futures
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -14,6 +15,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 from agents.listener import ListenerAgent
 from agents.mapper import ClinicalMapperAgent
 from utils.matchmaker import PeerMatchmaker
+from utils.sarvam_api import transcribe_audio, translate_text, synthesize_speech
 
 # ---------------------------------------------------------------------------
 # Global State
@@ -23,6 +25,8 @@ listener_agent = None
 mapper_agent = None
 matchmaker = None
 CRISIS_RISK_THRESHOLD = 8
+VOICE_LANGUAGE_CONFIDENCE_THRESHOLD = 0.70
+DEFAULT_VOICE_LANGUAGE = "en-IN"
 
 # ---------------------------------------------------------------------------
 # Lifespan – Load heavy models once at startup
@@ -66,6 +70,12 @@ class ScheduleRequest(BaseModel):
     peer_id: str
     selected_slot: str
 
+
+class TTSRequest(BaseModel):
+    text: str
+    session_id: str | None = None
+    target_language_code: str | None = None
+
 # ---------------------------------------------------------------------------
 # Session helpers
 # ---------------------------------------------------------------------------
@@ -89,6 +99,7 @@ def get_or_create_session(session_id: str) -> dict:
             "context_summary": "",
             "session_root_cause": "-",
             "session_risk_score": 1,
+            "preferred_voice_language": DEFAULT_VOICE_LANGUAGE,
             "log_file": log_file,
         }
     return ACTIVE_SESSIONS[session_id]
@@ -232,6 +243,83 @@ async def chat(req: ChatRequest):
         yield f"data: {json.dumps({'type': 'metadata', 'peer_group_match': peer_match, 'crisis_intercept': crisis_intercept})}\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")
+
+
+# ---------------------------------------------------------------------------
+# Voice STT Endpoint
+# ---------------------------------------------------------------------------
+@app.post("/api/transcribe")
+async def transcribe_voice(audio: UploadFile = File(...), session_id: str | None = Form(None)):
+    try:
+        audio_bytes = await audio.read()
+        if not audio_bytes:
+            return {"status": "error", "message": "Uploaded audio file is empty."}
+
+        stt_result = transcribe_audio(
+            audio_bytes=audio_bytes,
+            filename=audio.filename or "voice_note.webm",
+            content_type=audio.content_type or "audio/webm",
+        )
+
+        detected_language = stt_result.get("detected_language_code") or DEFAULT_VOICE_LANGUAGE
+        language_probability = float(stt_result.get("language_probability", 0.0))
+        effective_voice_language = detected_language
+
+        if session_id:
+            session = get_or_create_session(session_id)
+            effective_voice_language = session.get("preferred_voice_language", DEFAULT_VOICE_LANGUAGE)
+            if language_probability >= VOICE_LANGUAGE_CONFIDENCE_THRESHOLD:
+                session["preferred_voice_language"] = detected_language
+                effective_voice_language = detected_language
+
+        return {
+            "status": "success",
+            "transcript_en": stt_result.get("transcript_en", ""),
+            "detected_language_code": detected_language,
+            "language_probability": language_probability,
+            "effective_voice_language": effective_voice_language,
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# ---------------------------------------------------------------------------
+# Voice TTS Endpoint
+# ---------------------------------------------------------------------------
+@app.post("/api/tts")
+async def tts_response(req: TTSRequest):
+    try:
+        clean_text = (req.text or "").strip()
+        if not clean_text:
+            return {"status": "error", "message": "Text cannot be empty."}
+
+        target_language = req.target_language_code
+        if not target_language and req.session_id:
+            session = get_or_create_session(req.session_id)
+            target_language = session.get("preferred_voice_language", DEFAULT_VOICE_LANGUAGE)
+        if not target_language:
+            target_language = DEFAULT_VOICE_LANGUAGE
+
+        spoken_text = clean_text
+        try:
+            spoken_text = translate_text(clean_text, target_language)
+        except Exception as translation_error:
+            print(f"[VOICE WARN] Translation failed, falling back to original text: {translation_error}")
+            spoken_text = clean_text
+
+        tts_result = synthesize_speech(spoken_text, target_language)
+        audio_base64 = base64.b64encode(tts_result["audio_bytes"]).decode("utf-8")
+
+        return {
+            "status": "success",
+            "audio_base64": audio_base64,
+            "mime_type": tts_result.get("mime_type", "audio/mpeg"),
+            "spoken_text": spoken_text,
+            "spoken_language_code": target_language,
+            "tts_model": tts_result.get("tts_model"),
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 # ---------------------------------------------------------------------------
 # Peer Scheduling Endpoint

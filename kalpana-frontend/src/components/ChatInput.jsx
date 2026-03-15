@@ -46,7 +46,7 @@ const ChatInput = ({ onSendMessage, isTyping, isInputLocked = false }) => {
         stream.getTracks().forEach(track => track.stop());
         
         // Send the voice note using the ref to get the correct time
-        onSendMessage(`[🎤 Voice Note - ${formatTime(recordingTimeRef.current)}]`, audioUrl);
+        onSendMessage(`[Voice Note - ${formatTime(recordingTimeRef.current)}]`, audioUrl, audioBlob);
       };
 
       mediaRecorderRef.current.start();
@@ -186,3 +186,4 @@ const ChatInput = ({ onSendMessage, isTyping, isInputLocked = false }) => {
 };
 
 export default ChatInput;
+
