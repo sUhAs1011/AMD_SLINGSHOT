@@ -60,6 +60,11 @@ class ChatRequest(BaseModel):
     session_id: str
     chat_history: list[ChatMessage]
 
+class ScheduleRequest(BaseModel):
+    session_id: str
+    peer_id: str
+    selected_slot: str
+
 # ---------------------------------------------------------------------------
 # Session helpers
 # ---------------------------------------------------------------------------
@@ -103,13 +108,15 @@ async def chat(req: ChatRequest):
         else:
             langchain_history.append(AIMessage(content=msg.content))
 
-    # Build transcript for the Mapper (last 4 messages + current)
-    recent = req.chat_history[-5:]  # last 4 + current
+    # Build transcript for the Mapper (user messages only, last 3 turns)
+    # NOTE: We intentionally exclude long Kalpana responses — they eat the 4B model's
+    # input budget and are not clinically relevant for profiling the USER's state.
+    recent = req.chat_history[-6:]  # pull last 6, then filter
     transcript_lines = []
     for msg in recent:
-        speaker = "User" if msg.role == "user" else "Kalpana"
-        transcript_lines.append(f"{speaker}: {msg.content}")
-    full_context_str = "\n".join(transcript_lines)
+        if msg.role == "user":
+            transcript_lines.append(f"User: {msg.content}")
+    full_context_str = "\n".join(transcript_lines[-3:])  # cap at last 3 user turns
 
     def generate():
         # Fire the Mapper in a background thread
@@ -177,6 +184,27 @@ async def chat(req: ChatRequest):
             match = matchmaker.find_match(session["session_root_cause"])
             if match:
                 peer_match = match
+                # Always pre-seed availability so frontend never gets undefined
+                peer_match["availability"] = []
+                # Intercept match and attach dynamic availability from peers.json
+                try:
+                    peers_path = os.path.join(PROJECT_ROOT, "data", "peers.json")
+                    with open(peers_path, "r", encoding="utf-8") as f:
+                        peers_db = json.load(f)
+                    matched_pid = peer_match.get("peer_id", "")
+                    print(f"[DEBUG] Looking up availability for peer_id='{matched_pid}'")
+                    found = False
+                    for p in peers_db:
+                        if p.get("peer_id") == matched_pid:
+                            peer_match["availability"] = p.get("availability", [])
+                            print(f"[DEBUG] Found availability: {peer_match['availability']}")
+                            found = True
+                            break
+                    if not found:
+                        print(f"[DEBUG] peer_id='{matched_pid}' not found in peers.json!")
+                except Exception as e:
+                    print(f"[API ERROR] Failed to load availability array: {e}")
+                    peer_match["availability"] = []
 
         # Log the turn
         log_entry = {
@@ -201,3 +229,32 @@ async def chat(req: ChatRequest):
         yield f"data: {json.dumps({'type': 'metadata', 'peer_group_match': peer_match})}\n\n"
 
     return StreamingResponse(generate(), media_type="text/event-stream")
+
+# ---------------------------------------------------------------------------
+# Peer Scheduling Endpoint
+# ---------------------------------------------------------------------------
+@app.post("/api/schedule")
+async def schedule_connection(req: ScheduleRequest):
+    try:
+        appointments_file = os.path.join(PROJECT_ROOT, "data", "appointments.json")
+        if not os.path.exists(appointments_file):
+            with open(appointments_file, "w", encoding="utf-8") as f:
+                json.dump([], f)
+                
+        with open(appointments_file, "r", encoding="utf-8") as f:
+            appts = json.load(f)
+            
+        appt_record = {
+            "session_id": req.session_id,
+            "peer_id": req.peer_id,
+            "selected_slot": req.selected_slot,
+            "created_at": datetime.datetime.now().isoformat()
+        }
+        appts.append(appt_record)
+        
+        with open(appointments_file, "w", encoding="utf-8") as f:
+            json.dump(appts, f, indent=4)
+            
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

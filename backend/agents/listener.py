@@ -11,7 +11,7 @@ class ListenerAgent:
             keep_alive=-1,
             num_ctx=4096,
             num_thread=8,
-            num_predict=300,
+            num_predict=1024,
             repeat_penalty=1.2,
             stop=["\n\n", "User:", "You:", "Name: Response"]
         )

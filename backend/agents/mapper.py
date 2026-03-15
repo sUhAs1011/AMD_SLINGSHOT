@@ -14,7 +14,7 @@ class ClinicalMapperAgent:
             keep_alive=-1,
             num_ctx=8192,
             num_thread=8,
-            num_predict=200,
+            num_predict=1024,
             format="json"
         )
 
@@ -23,24 +23,22 @@ class ClinicalMapperAgent:
         Read the provided conversation transcript and analyze the user's current psychological state.
         
         CRITICAL RULES:
-        1. clinical_summary: Summarize the user's situation in 2-3 sentences. Explicitly but minimallly justify the chosen primary_emotion, risk_level, risk_score, self_harm status, and root_cause.
-        CRITICAL RULES:
-        1. clinical_summary: Summarize the user's situation in 2-3 sentences. Justify the chosen emotion, risk level, and root cause.
+        1. clinical_summary: Summarize the user's situation in 2-3 sentences. Explicitly justify the chosen emotion, risk level, and root cause.
         2. primary_emotion: e.g., severe anxiety, suicidal ideation, depression, fear.
         3. detected_risk: "low" (1-4), "moderate" (5-7), or "high" (8-10).
         4. self_harm_indicators: boolean (true/false).
         5. risk_score: Integer 1-10.
-        6.root_cause_of_the_distress: Identify the specific, external life-event or legitimate incident that is the root cause of the distress. Examples include: 'Bereavement/Loss', 'Job loss/Layoffs', 'Academic failure/Exam stress', 'Physical assault', 'War/Conflict', 'Breakup/Divorce'. CRITICAL: If the user only describes feelings (lonely, sad, anxious) without naming a specific external event, YOU MUST RETURN '-'
+        6. root_cause_of_the_distress: Identify the specific, external life-event or legitimate incident that is the root cause of the distress. Examples include: 'Bereavement/Loss', 'Job loss/Layoffs', 'Academic failure/Exam stress', 'Physical assault', 'War/Conflict', 'Breakup/Divorce'. CRITICAL: If the user only describes feelings (lonely, sad, anxious) without naming a specific external event, YOU MUST RETURN '-'
+        
         Output ONLY valid JSON matching this exact structure:
-
-        {{
+        {
             "clinical_summary": "string",
             "primary_emotion": "string",
-            "detected_risk": "low/moderate/high",
+            "detected_risk": "low",
             "self_harm_indicators": false,
             "risk_score": 1,
             "root_cause_of_the_distress": "string"
-        }}"""
+        }"""
 
         messages = [
             SystemMessage(content=system_prompt_template), 
@@ -63,7 +61,8 @@ class ClinicalMapperAgent:
             if not parsed_raw.get("clinical_summary"):
                 raise ValueError("Empty or incomplete JSON received")
             return parsed_raw
-        except Exception:
+        except Exception as e:
+            print(f"[MAPPER ERROR] JSON Parsing failed: {e}")
             return {
                 "clinical_summary": "Parsing failed or format error.",
                 "primary_emotion": "unknown",

@@ -154,7 +154,7 @@ function App() {
       </div>
 
       {/* Modal View */}
-      <PeerMatchModal peerMatch={peerMatch} onClose={() => setPeerMatch(null)} />
+      <PeerMatchModal peerMatch={peerMatch} sessionId={sessionIdRef.current} onClose={() => setPeerMatch(null)} />
     </div>
   );
 }
