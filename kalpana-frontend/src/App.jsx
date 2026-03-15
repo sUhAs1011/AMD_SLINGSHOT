@@ -4,6 +4,11 @@ import MessageBubble from './components/MessageBubble';
 import ChatInput from './components/ChatInput';
 import PeerMatchModal from './components/PeerMatchModal';
 
+// Generate a simple unique session ID
+function generateSessionId() {
+  return 'sess_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
 function App() {
   const [messages, setMessages] = useState([
     {
@@ -14,6 +19,7 @@ function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [peerMatch, setPeerMatch] = useState(null);
   const scrollRef = useRef(null);
+  const sessionIdRef = useRef(generateSessionId());
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -31,39 +37,76 @@ function App() {
     setIsTyping(true);
 
     try {
-      // Create chat history for API (all messages including the new one)
+      // Build chat history for the API (all messages including the new one)
       const chatHistory = [...messages, userMsg].map(m => ({
-        role: m.role, // API expects 'user' or 'kalpana' 
+        role: m.role,
         content: m.content
       }));
 
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_history: chatHistory })
+        body: JSON.stringify({
+          session_id: sessionIdRef.current,
+          chat_history: chatHistory
+        })
       });
 
       if (!response.ok) {
         throw new Error('API Response Error');
       }
 
-      const data = await response.json();
+      // Add an empty Kalpana message that we will stream into
+      setMessages(prev => [...prev, { role: 'kalpana', content: '' }]);
+      setIsTyping(false);
 
-      // Add Kalpana response to UI
-      setMessages(prev => [...prev, { role: 'kalpana', content: data.response }]);
+      // Read the SSE stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-      // Check if a peer match was triggered
-      if (data.peer_group_match) {
-        setPeerMatch(data.peer_group_match);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse complete SSE lines from the buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+
+          try {
+            const payload = JSON.parse(line.slice(6)); // Remove "data: " prefix
+
+            if (payload.type === 'chunk') {
+              // Append text chunk to the last (Kalpana) message
+              setMessages(prev => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                updated[updated.length - 1] = { ...last, content: last.content + payload.content };
+                return updated;
+              });
+            } else if (payload.type === 'metadata') {
+              // Handle peer match notification
+              if (payload.peer_group_match) {
+                setPeerMatch(payload.peer_group_match);
+              }
+            }
+          } catch {
+            // Ignore malformed JSON lines
+          }
+        }
       }
     } catch (error) {
       console.error("Chat Error:", error);
-      setMessages(prev => [...prev, { 
-        role: 'kalpana', 
-        content: "I'm sorry, I'm having trouble connecting to my systems right now. Please try again." 
-      }]);
-    } finally {
       setIsTyping(false);
+      setMessages(prev => [...prev, {
+        role: 'kalpana',
+        content: "I'm sorry, I'm having trouble connecting to my systems right now. Please try again."
+      }]);
     }
   };
 

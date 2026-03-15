@@ -36,6 +36,6 @@ class ListenerAgent:
         memory_note = f" [Session context: {context_summary}]" if context_summary else ""
 
         system_prompt = SystemMessage(content=self.base_persona + " " + instruction + memory_note)
-        prompt = [system_prompt] + history[-6:]
+        prompt = [system_prompt] + history[-8:]
         for chunk in self.llm.stream(prompt):
             yield chunk.content
