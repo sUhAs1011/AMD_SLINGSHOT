@@ -134,14 +134,17 @@ def translate_text(text: str, target_language_code: str | None) -> str:
     if not clean_text:
         return ""
 
-    target_lang = _translation_lang(target_language_code)
-    if target_lang == "en":
+    target_code = (target_language_code or "en-IN").strip()
+    if "-" not in target_code and len(target_code) == 2:
+        target_code = f"{target_code.lower()}-IN"
+    if target_code.lower().startswith("en"):
         return clean_text
 
     body = {
-        "model": "sarvam-translate",
-        "prompt": clean_text,
-        "target_language": target_lang,
+        "model": "sarvam-translate:v1",
+        "input": clean_text,
+        "source_language_code": "en-IN",
+        "target_language_code": target_code,
     }
 
     response = _request_with_retry(
@@ -152,11 +155,7 @@ def translate_text(text: str, target_language_code: str | None) -> str:
     )
     payload = response.json()
 
-    translated = ""
-    try:
-        translated = payload["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError):
-        translated = payload.get("translated_text", "")
+    translated = payload.get("translated_text", "")
 
     translated = (translated or "").strip()
     if not translated:
