@@ -180,6 +180,7 @@ def synthesize_speech(text: str, language_code: str | None) -> dict[str, Any]:
             "text": clean_text,
             "target_language_code": target_code,
             "model": DEFAULT_TTS_MODEL,
+            "speaker": "Priya",
         },
     )
     payload = response.json()
