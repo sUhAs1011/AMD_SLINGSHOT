@@ -197,7 +197,7 @@ def synthesize_speech(text: str, language_code: str | None) -> dict[str, Any]:
             "text": clean_text,
             "target_language_code": validated_lang,
             "model": DEFAULT_TTS_MODEL,
-            "speaker": "Priya",
+            "speaker": "priya",
         },
     )
     payload = response.json()
@@ -222,5 +222,6 @@ def synthesize_speech(text: str, language_code: str | None) -> dict[str, Any]:
         "mime_type": "audio/wav",
         "tts_model": DEFAULT_TTS_MODEL,
         "language_used": validated_lang,
-        "speaker": "Ritu",
+        "speaker": "priya",
+
     }
