@@ -1,4 +1,5 @@
 import os
+import base64
 from typing import Any
 
 import requests
@@ -16,7 +17,7 @@ STT_ENDPOINT = f"{SARVAM_BASE_URL}/speech-to-text"
 TRANSLATE_ENDPOINT = f"{SARVAM_BASE_URL}/translate"
 TTS_ENDPOINT = f"{SARVAM_BASE_URL}/text-to-speech"
 
-DEFAULT_TTS_MODEL = os.getenv("SARVAM_TTS_DEFAULT_MODEL", "bulbul-hindi-v2")
+DEFAULT_TTS_MODEL = os.getenv("SARVAM_TTS_DEFAULT_MODEL", "bulbul:v3")
 
 # Known language-to-model mappings from Sarvam voice docs.
 TTS_MODEL_MAP = {
@@ -167,27 +168,39 @@ def synthesize_speech(text: str, language_code: str | None) -> dict[str, Any]:
     clean_text = (text or "").strip()
     if not clean_text:
         raise RuntimeError("Cannot synthesize empty text.")
+    target_code = (language_code or "en-IN").strip()
+    if "-" not in target_code and len(target_code) == 2:
+        target_code = f"{target_code.lower()}-IN"
 
-    last_error: Exception | None = None
-    for model in _model_candidates(language_code):
-        try:
-            response = _request_with_retry(
-                "post",
-                TTS_ENDPOINT,
-                headers=_headers(content_type_json=True),
-                json={"model": model, "text": clean_text},
-            )
-            audio_bytes = response.content
-            if not audio_bytes:
-                raise RuntimeError("Sarvam TTS returned empty audio.")
-            return {
-                "audio_bytes": audio_bytes,
-                "mime_type": response.headers.get("Content-Type", "audio/mpeg"),
-                "tts_model": model,
-            }
-        except Exception as exc:  # Fallback to next candidate model.
-            last_error = exc
+    response = _request_with_retry(
+        "post",
+        TTS_ENDPOINT,
+        headers=_headers(content_type_json=True),
+        json={
+            "text": clean_text,
+            "target_language_code": target_code,
+            "model": DEFAULT_TTS_MODEL,
+        },
+    )
+    payload = response.json()
+    audios = payload.get("audios") or []
+    if not audios:
+        raise RuntimeError("Sarvam TTS returned no audio payload.")
 
-    if last_error is not None:
-        raise RuntimeError(f"Sarvam TTS failed for all model candidates: {last_error}") from last_error
-    raise RuntimeError("Sarvam TTS failed with unknown error.")
+    audio_b64 = audios[0]
+    if not audio_b64:
+        raise RuntimeError("Sarvam TTS returned empty base64 audio.")
+
+    try:
+        audio_bytes = base64.b64decode(audio_b64)
+    except Exception as exc:
+        raise RuntimeError(f"Failed to decode Sarvam TTS audio: {exc}") from exc
+
+    if not audio_bytes:
+        raise RuntimeError("Decoded Sarvam TTS audio is empty.")
+
+    return {
+        "audio_bytes": audio_bytes,
+        "mime_type": "audio/wav",
+        "tts_model": DEFAULT_TTS_MODEL,
+    }
