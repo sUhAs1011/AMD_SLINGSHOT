@@ -17,7 +17,7 @@ STT_ENDPOINT = f"{SARVAM_BASE_URL}/speech-to-text"
 TRANSLATE_ENDPOINT = f"{SARVAM_BASE_URL}/translate"
 TTS_ENDPOINT = f"{SARVAM_BASE_URL}/text-to-speech"
 
-DEFAULT_TTS_MODEL = os.getenv("SARVAM_TTS_DEFAULT_MODEL", "bulbul:v3")
+DEFAULT_TTS_MODEL = "bulbul:v3"
 
 # Known language-to-model mappings from Sarvam voice docs.
 TTS_MODEL_MAP = {
@@ -26,6 +26,20 @@ TTS_MODEL_MAP = {
     "kn": "bulbul-kannada-v2",
     "ta": "bulbul-tamil-v2",
     "te": "bulbul-telugu-v2",
+}
+
+SUPPORTED_TTS_LANGS = {
+    "hi": "hi-IN",
+    "en": "en-IN",
+    "ta": "ta-IN",
+    "te": "te-IN",
+    "kn": "kn-IN",
+    "ml": "ml-IN",
+    "mr": "mr-IN",
+    "gu": "gu-IN",
+    "bn": "bn-IN",
+    "pa": "pa-IN",
+    "od": "od-IN",
 }
 
 
@@ -55,6 +69,11 @@ def _to_lang_prefix(language_code: str | None) -> str:
 
 def _translation_lang(language_code: str | None) -> str:
     return _to_lang_prefix(language_code)
+
+
+def _validate_tts_language(language_code: str | None) -> str:
+    base_lang = _to_lang_prefix(language_code)
+    return SUPPORTED_TTS_LANGS.get(base_lang, "en-IN")
 
 
 def _model_candidates(language_code: str | None) -> list[str]:
@@ -168,9 +187,7 @@ def synthesize_speech(text: str, language_code: str | None) -> dict[str, Any]:
     clean_text = (text or "").strip()
     if not clean_text:
         raise RuntimeError("Cannot synthesize empty text.")
-    target_code = (language_code or "en-IN").strip()
-    if "-" not in target_code and len(target_code) == 2:
-        target_code = f"{target_code.lower()}-IN"
+    validated_lang = _validate_tts_language(language_code or "en-IN")
 
     response = _request_with_retry(
         "post",
@@ -178,7 +195,7 @@ def synthesize_speech(text: str, language_code: str | None) -> dict[str, Any]:
         headers=_headers(content_type_json=True),
         json={
             "text": clean_text,
-            "target_language_code": target_code,
+            "target_language_code": validated_lang,
             "model": DEFAULT_TTS_MODEL,
             "speaker": "Priya",
         },
@@ -204,4 +221,6 @@ def synthesize_speech(text: str, language_code: str | None) -> dict[str, Any]:
         "audio_bytes": audio_bytes,
         "mime_type": "audio/wav",
         "tts_model": DEFAULT_TTS_MODEL,
+        "language_used": validated_lang,
+        "speaker": "Ritu",
     }
