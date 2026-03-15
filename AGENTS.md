@@ -43,7 +43,8 @@ The FastAPI `POST /api/chat` endpoint manages all state transitions using the Ma
 2. **Data Lock:** If `root_cause` is identified (not `-`), lock it into the session state.
 3. **Peer Match Threshold:** If conversation `history_len >= 4` AND `risk_score >= 5` AND `root_cause` is locked → Execute Matchmaker.
 4. **Availability Lookup:** After a Pinecone match is found, the `peer_id` is used to look up the peer's `availability` array from `data/peers.json` and attach it to the match metadata.
-5. **SSE Metadata Event:** The final SSE event sent to the frontend is `data: {"type": "metadata", "peer_group_match": {...}}`.
+5. **Crisis Intercept:** If `self_harm_indicators == True` OR `risk_score >= CRISIS_RISK_THRESHOLD (8)`, set `crisis_intercept = True`, skip Pinecone entirely, and send it in the final SSE metadata event. This bypasses peer scheduling and triggers the `CrisisModal` in the frontend.
+6. **SSE Metadata Event:** Every turn ends with `data: {"type": "metadata", "peer_group_match": ..., "crisis_intercept": bool}\n\n`.
 
 ### D. The Matchmaker (`backend/utils/matchmaker.py`)
 - Takes the locked `root_cause` and embeds it using a local HuggingFace `SentenceTransformer` (`bert-base-nli-mean-tokens`).
@@ -74,9 +75,10 @@ The FastAPI `POST /api/chat` endpoint manages all state transitions using the Ma
 ## 4. Repository Structure Highlights
 
 - `kalpana-frontend/` — **Primary active UI.** React 18 + Vite + Tailwind v4.
-  - `src/App.jsx` — Main app orchestrator. Manages SSE stream consumption, message state, `peerMatch` state, and session ID generation.
-  - `src/components/PeerMatchModal.jsx` — The Peer Scheduling Modal. Displays a **custom div-based dropdown** (not a native `<select>`) of the matched peer's availability slots from `data/peers.json`. Calls `POST /api/schedule` to lock in an appointment. Has `idle → connecting → connected` connection state lifecycle.
-  - `src/components/ChatInput.jsx` — Mocked WhatsApp-style audio input UI.
+  - `src/App.jsx` — Main app orchestrator. Manages SSE stream consumption, message state, `peerMatch` state, `isCrisisMode` state, and session ID generation. When `payload.crisis_intercept === true` is received, it sets `isCrisisMode = true`, clears any peer match, and locks the chat input.
+  - `src/components/PeerMatchModal.jsx` — The Peer Scheduling Modal. Displays a **custom div-based dropdown** (not a native `<select>`) of the matched peer's availability slots from `data/peers.json`. Shows the matched peer's `root_cause` and `clinical_notes` for context. Calls `POST /api/schedule` to lock in an appointment. Has `idle → connecting → connected` connection state lifecycle.
+  - `src/components/CrisisModal.jsx` — High-priority crisis intervention overlay. Rendered when `isCrisisMode = true`. **Supercedes the PeerMatchModal** — both cannot show simultaneously. Provides professional help resources.
+  - `src/components/ChatInput.jsx` — Mocked WhatsApp-style audio input UI. Accepts an `isInputLocked` prop that disables sending when in crisis mode.
   - `src/components/MessageBubble.jsx` — Individual chat message display.
 - `backend/api.py` — **PRIMARY BACKEND CONTROLLER.** FastAPI app. Contains all session management, SSE streaming, concurrent agent execution, availability lookup, and the `/api/schedule` endpoint. **Start here for all backend routing.**
 - `backend/agents/listener.py` — `ministral-3:3b` prompt + Phase definitions. I/O pipeline only.
@@ -100,7 +102,7 @@ When writing code for Kalpana, you **must** adhere to the following rules:
 3. **Local Context Bounds:** Never pass the full chat history to the Mapper. The transcript injected must be **user messages only** from the last 3 turns (`req.chat_history[-6:]` filtered to `msg.role == "user"`, then capped to 3). **Do NOT include Kalpana's assistant responses** — they are clinically irrelevant for profiling and their verbosity exhausts the 4B model's input token budget, causing empty `{}` JSON output on longer conversations.
 4. **No Cloud LLMs:** Do not add `openai`, `anthropic`, etc. Production code must use Ollama.
 5. **Logging Synchronization:** Session logs in `session_logs/` must record the `phase` and `context` used at the moment of generation, NOT the predicted phase for the next turn.
-6. **SSE Packet Format:** The final SSE metadata event MUST be `data: {"type": "metadata", "peer_group_match": ...}\n\n`. The React `App.jsx` parser checks `payload.type === 'metadata'` to trigger the PeerMatchModal. Any deviation (e.g., using `"metadata": True` instead of `"type": "metadata"`) will silently break the pop-up.
+6. **SSE Packet Format:** The final SSE metadata event MUST be `data: {"type": "metadata", "peer_group_match": ..., "crisis_intercept": bool}\n\n`. In `App.jsx`, `payload.crisis_intercept === true` takes priority and triggers `CrisisModal`. `payload.type === 'metadata'` (without crisis) triggers `PeerMatchModal`. Any deviation will silently break the UI.
 7. **Custom Dropdowns Only:** Do not use native HTML `<select>/<option>` for dropdowns in the React frontend. The WEAL dark theme makes options invisible on most OS/browsers. Use fully custom div-based dropdowns as established in `PeerMatchModal.jsx`.
 8. **Availability Pre-Seeding:** When building the `peer_match` dict in `api.py`, always set `peer_match["availability"] = []` before attempting the `peers.json` lookup. This ensures the frontend never receives `undefined` for this key.
 
@@ -127,7 +129,7 @@ When writing code for Kalpana, you **must** adhere to the following rules:
 | Peer Scheduling Modal with Custom Dropdown | ✅ Implemented |
 | `/api/schedule` Endpoint → `appointments.json` | ✅ Implemented |
 | Availability Lookup from `peers.json` | ✅ Implemented |
-| Crisis Routing Flow (`CrisisModal.jsx`) | 🔲 Planned (see `crisis_routing_plan.md`) |
+| Crisis Routing (`crisis_intercept` flag + `CrisisModal.jsx`) | ✅ Implemented (partial — CrisisModal UI content TBD) |
 | PII Scrubbing (Microsoft Presidio) | 🔲 Planned |
 | Real-Time WebSocket Chatrooms | 🔲 Planned |
 | Voice Interface (Sarvam STT/TTS) | 🔲 Future |

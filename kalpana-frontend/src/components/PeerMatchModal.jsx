@@ -86,22 +86,28 @@ const PeerMatchModal = ({ peerMatch, sessionId, onClose }) => {
 
           <div className="space-y-2">
             <h3 className="text-2xl font-semibold text-white">
-              {connectionStatus === 'connecting' ? 'Scheduling...' : 
-               connectionStatus === 'connected' ? 'Connection Scheduled!' : 'Peer Match Found'}
+              {connectionStatus === 'connecting' ? 'Locking In Your Slot...' : 
+               connectionStatus === 'connected' ? '🎉 You Are Not Alone' : '💙 Someone Understands'}
             </h3>
             
             {connectionStatus === 'idle' || connectionStatus === 'error' ? (
-              <p className="text-sm text-kalpana-100/80 leading-relaxed">
-                Peer <strong className="font-bold text-white">{peerMatch.peer_id}</strong> is available to connect. When would you like to speak with them?
-                {connectionStatus === 'error' && <span className="block text-red-400 mt-2">Failed to save appointment. Please try again.</span>}
-              </p>
+              <div className="space-y-3">
+                <p className="text-sm text-kalpana-100/80 leading-relaxed">
+                  We found someone who truly gets it. <strong className="font-bold text-white">{peerMatch.peer_id}</strong> has personally lived through{' '}
+                  <span className="text-kalpana-300 font-medium">{peerMatch.root_cause || 'a similar experience'}</span> and came out the other side.
+                </p>
+                <p className="text-xs text-kalpana-100/70 leading-relaxed italic border-l-2 border-kalpana-500/40 pl-3">
+                  Pick a time below to connect — you don&rsquo;t have to go through this alone.
+                </p>
+                {connectionStatus === 'error' && <span className="block text-red-400 mt-2 text-xs">Failed to save appointment. Please try again.</span>}
+              </div>
             ) : connectionStatus === 'connecting' ? (
               <p className="text-sm text-kalpana-100/80 leading-relaxed">
-                Saving appointment with Peer ID: <strong className="font-bold text-white">{peerMatch.peer_id}</strong> ...
+                Saving your appointment with <strong className="font-bold text-white">{peerMatch.peer_id}</strong> ...
               </p>
             ) : (
               <p className="text-sm text-kalpana-100/80 leading-relaxed">
-                You have successfully scheduled a connection! The live chatroom feature will open here at the selected time in a future update.
+                Your connection with <strong className="font-bold text-white">{peerMatch.peer_id}</strong> is confirmed. A real person who has walked your path will meet you at the scheduled time. You took a brave step today. 💙
               </p>
             )}
           </div>
