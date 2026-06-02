@@ -96,3 +96,6 @@ This repository represents the MVP of the matchmaking intelligence layer. The ar
 
 4. **PII Scrubbing Pipeline:**
    * Running all user input through Microsoft Presidio to scrub Personally Identifiable Information (names, locations, phone numbers) *before* it hits the LLMs or gets logged to the session state.
+
+## Certificate
+<img width="1601" height="1131" alt="Untitled design (1) (1)" src="https://github.com/user-attachments/assets/7ef8670f-284f-4eab-a682-a9bd978edefc" />
