@@ -220,13 +220,3 @@ Kalpana was recognized as one of the **Top 8 teams** at **HealthHack 4.0**, wher
 <p align="center">
   <img src="https://github.com/user-attachments/assets/7ef8670f-284f-4eab-a682-a9bd978edefc" alt="HealthHack 4.0 Certificate"/>
 </p>
-
----
-
-# ⚠️ Disclaimer
-
-Kalpana is intended to provide **peer support and emotional assistance**. It is **not a substitute for professional medical advice, diagnosis, or treatment**. Users experiencing severe emotional distress or mental health crises should seek assistance from qualified healthcare professionals or emergency services.
-
----
-
-⭐ If you found this project interesting, consider giving the repository a star!
